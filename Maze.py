@@ -17,15 +17,17 @@ red = (255, 0, 0)                # Đỏ
 green = (0, 255, 0)              # Xanh lá
 blue = (0, 0, 255)               # Xanh dương
 aqua = (0, 255,255) 
+dark_green = (0, 100, 0)
+pale_yellow = (255, 255, 204)
 displaySurf=pg.display.set_mode((border+mazeSize+buttonbarW+pointbarW,border+barH))
 displaySurf.fill(gray)
 
 #Ảnh
-#startPic=pg.image.load("./img/actor.png")
-#endPic=pg.image.load("./img/vietnam.png")
+startPic=pg.image.load("./img/actor.png")
+endPic=pg.image.load("./img/vietnam.png")
 #scale ảnh
-#startPic=pg.transform.scale(startPic,(50,50))
-#endPic=pg.transform.scale(endPic,(50,50))
+startPic=pg.transform.scale(startPic,(40,40))
+endPic=pg.transform.scale(endPic,(40,40))
 
 #load music
 pg.mixer.music.load('./DLTTAD.mp3')  # Thay thế 'background_music.mp3' bằng tên tệp của bạn
@@ -88,8 +90,8 @@ def drawAiScreen():
     #right bar
     drawText(border+buttonbarW+mazeSize,border/2+50*0,75,50,'Start point',24,red)
     drawText(border+buttonbarW+mazeSize,border/2+50*1,75,50,'End point',24,red)
-    #displaySurf.blit(startPic,(border+buttonbarW+mazeSize+75,border/2+50*0))
-    #displaySurf.blit(endPic,(border+buttonbarW+mazeSize+75,border/2+50*1))
+    displaySurf.blit(startPic,(border+buttonbarW+mazeSize+75+10,border/2+50*0))
+    displaySurf.blit(endPic,(border+buttonbarW+mazeSize+75+10,border/2+50*1))
 
 def check_stable_button(x, y, width, height):
     mouse = pg.mouse.get_pos()
@@ -105,10 +107,15 @@ check_button_dfs = False
 check_button_Hunt_and_Kill = False
 
 # Directions for moving in the maze (Right, Left, Down, Up)
-DIRECTIONS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+# Khởi tạo các hướng di chuyển
+DIRECTIONS = [
+    (-1, 0),  # Lên
+    (1, 0),   # Xuống
+    (0, -1),  # Trái
+    (0, 1)    # Phải
+]
 
 cell_size = 20
-
 w,h = mazeSize // cell_size, mazeSize // cell_size
 
 
@@ -120,15 +127,14 @@ MAZE = 0
 
 
 #print(maze)
-
+#=====================================Function chung========================================
 # Hàm kiểm tra xem vị trí mới có nằm trong phạm vi của mê cung và là tường không
 def is_within_bounds(x, y):
-    return 0 <= x < h and 0 <= y < w and maze[x][y] == 1
+    return 0 < x < h-1 and 0 < y < w-1 and maze[x][y] == 1
 
 startx = (border/2+buttonbarW) 
 starty = (border/2) 
-
-
+#==========================================DFS==============================================
 # Randomized Depth-First Search algorithm to generate maze
 def generate_maze(x, y,maze):
     x = int(x)
@@ -145,18 +151,16 @@ def generate_maze(x, y,maze):
             pg.display.flip()     # Vẽ lại màn hình
             pg.time.delay(20)     # Thời gian trễ để xem rõ quá trình tạo mê cung
             generate_maze(nx, ny,maze)     # Đệ quy tiếp tục từ ô đích
-
 # Drawing the maze
 def draw_maze(startx, starty):
     for x in range(w):
         for y in range(h):
             if maze[x][y] == 1 :
-                color = black
+                color = dark_green
+            # elif maze[x][y] == 2:
+            #     color = pale_yellow
             else: color = white
             pg.draw.rect(displaySurf, color, (startx + x * cell_size, starty+ y * cell_size, cell_size, cell_size))
-
-
-
 def drawStartEnd():
     list =[]
     for x in range(w):
@@ -173,105 +177,70 @@ def drawStartEnd():
     return tuple
     #print(startx , randomstartx, starty, randomstarty)
 
+#==========================================Hunt and kill==============================================
+def createMaze(maze,n):
+    for i in range(n):
+        for j in range(n):
+            if i%2==0 or j%2==0:
+                maze[i][j]=1
+            else:
+                maze[i][j]=0
+def is_valid(maze, x, y):
+    # Kiểm tra xem ô (x, y) có nằm trong giới hạn của mê cung và chưa được ghé thăm
+    rows, cols = len(maze), len(maze[0])
+    return 0 <= x < rows and 0 <= y < cols and maze[x][y] == 0
+def huntAndKill(maze, start_x, start_y):
+    maze[start_x][start_y] = 2  # Đánh dấu ô đầu tiên là đã ghé thăm bằng 2
+    current_x, current_y = start_x, start_y
 
-
-
-# Hàm tìm các ô chưa thăm xung quanh một ô nhất định
-# def get_neighbors(x, y):
-#     neighbors = []
-#     #random.shuffle(DIRECTIONS)
-#     for dx, dy in DIRECTIONS:
-#         nx, ny = x + dx * 2, y + dy * 2
-#         if 0 <= nx < h and 0 <= ny < w and maze[nx][ny] == 1:
-#             neighbors.append((nx, ny, dx, dy))
-#     return neighbors
-def get_neighbors(x, y):
-    neighbors = []
-    #random.shuffle(DIRECTIONS)
-    for dx, dy in DIRECTIONS:
-        nx, ny = x + dx * 2, y + dy * 2
-        if 0 <= nx < h and 0 <= ny < w :
-            neighbors.append((nx, ny, dx, dy))
-    return neighbors
-def random_walk(x, y):
-    maze[x][y] = 0  # Đánh dấu ô hiện tại là đã ghé thăm
-    random.shuffle(DIRECTIONS)  # Trộn hướng đi để tạo mê cung ngẫu nhiên
-    TT = False
     while True:
+        # Kill phase: Tìm ô lân cận chưa ghé thăm
+        unvisited_neighbors = []
         for dx, dy in DIRECTIONS:
-            nx, ny = x + dx * 2, y + dy * 2  # Di chuyển hai ô mỗi lần để tạo tường ngăn cách
-            if is_within_bounds(nx, ny):
-                maze[x + dx][y + dy] = 0  # Xóa tường giữa các ô
-                maze[nx][ny] = 0          # Xóa ô đích để tạo đường đi
-                x, y = nx, ny  
-                draw_maze(startx,starty)               # Cập nhật màn hình mỗi khi có thay đổi
-                pg.display.flip()     # Vẽ lại màn hình
-                pg.time.delay(20)     # Thời gian trễ để xem rõ quá trình tạo mê cung
-            else: 
-                TT = True
+            nx, ny = current_x + 2*dx, current_y + 2*dy
+            if is_valid(maze, nx, ny):
+                unvisited_neighbors.append((nx, ny))
+
+        if unvisited_neighbors:
+            # Chọn ngẫu nhiên một ô lân cận chưa ghé thăm
+            next_x, next_y = random.choice(unvisited_neighbors)
+            wall_x, wall_y = (current_x + next_x) // 2, (current_y + next_y) // 2
+            maze[wall_x][wall_y] = 2  # Phá vách ngăn bằng cách đánh dấu là 2
+            maze[next_x][next_y] = 2  # Đánh dấu ô mới là đã ghé thăm
+            current_x, current_y = next_x, next_y
+            #vẽ
+            draw_maze(startx,starty)
+            pg.display.flip()
+            pg.time.delay(20)
+        else:
+            # Hunt phase: Tìm ô chưa ghé thăm có lân cận đã ghé thăm
+            found = False
+            for i in range(len(maze)):
+                for j in range(len(maze[i])):
+                    if maze[i][j] == 0:  # Tìm ô chưa ghé thăm
+                        # Kiểm tra nếu ô này có ô lân cận đã ghé thăm
+                        for dx, dy in DIRECTIONS:
+                            ni, nj = i + 2*dx, j + 2*dy
+                            if 0 <= ni < len(maze) and 0 <= nj < len(maze[0]) and maze[ni][nj] == 2:
+                                # Phá vách ngăn và đánh dấu ô mới là đã ghé thăm
+                                wall_x, wall_y = (i + ni) // 2, (j + nj) // 2
+                                maze[wall_x][wall_y] = 2  # Phá vách ngăn
+                                maze[i][j] = 2  # Đánh dấu ô này là đã ghé thăm
+                                current_x, current_y = i, j  # Cập nhật vị trí hiện tại
+                                found = True
+                                pg.time.delay(500)
+                                break
+                        if found:
+                            break
+                    if found:
+                        break
+            # Nếu không tìm thấy ô nào chưa ghé thăm, thoát khỏi vòng lặp
+            if not found:
                 break
-        if TT: break
-    
 
-    #while True:
-        
-        # Tìm các ô liền kề chưa ghé thăm
-        #neighbors = [(nx, ny, dx, dy) for nx, ny, dx, dy in get_neighbors(x, y) if maze[nx][ny] == 1]
-        
-
-        # if neighbors:
-        #     # Chọn ngẫu nhiên một ô liền kề chưa ghé thăm
-        #     nx, ny, dx, dy = random.choice(neighbors)
-        #     # Xóa tường giữa ô hiện tại và ô liền kề
-        #     maze[x + dx][y + dy] = 0
-        #     maze[nx][ny] = 0
-        #     # Di chuyển đến ô mới
-        #     x, y = nx, ny
-        #     draw_maze(startx, starty)  # Vẽ mê cung
-        #     pg.display.flip()
-        #     pg.time.delay(30)
-        # else:
-        #     break
-       
-def hunt(maze):
-    #print(1)
-    for i in range(w):
-        for j in range(h):
-            # Tìm ô chưa ghé thăm có ít nhất một ô liền kề đã ghé thăm
-            if maze[i][j] == 1:
-
-                neighbors = [(nx, ny, dx, dy) for nx, ny, dx, dy in get_neighbors(i, j) if maze[nx][ny] == 0]
-                print(neighbors)
-                if neighbors:
-                    #print(1)
-                    # Chọn ngẫu nhiên một ô đã ghé thăm liền kề
-                    #nx, ny, dx, dy = random.choice(neighbors)
-                    #print(nx,ny)
-                    # Xóa tường giữa ô chưa ghé thăm và ô đã ghé thăm
-                    #maze[i + dx][j + dy] = 0
-                    #maze[i][j] = 0
-                    # Trả về ô mới để bắt đầu lại từ đó
-                    #print("uuuuu")
-                    return i, j
-    return None, None  # Không tìm thấy ô mới
-
-
-# Hàm tạo mê cung bằng thuật toán Hunt and Kill
-def generate_maze_hunt_and_kill(x,y,maze):
-   # Chọn ngẫu nhiên một ô bắt đầu
-    random_walk(x, y)
-
-    while True:
-        # Thực hiện giai đoạn hunt để tìm ô mới bắt đầu
-        x, y = hunt(maze)
-        if x is None:
-            break  # Kết thúc nếu hunt không tìm thấy ô nào
-        # Tiếp tục với giai đoạn kill từ ô mới
-        random_walk(x, y)
-
-                    
-
-
+    # In mê cung kết quả
+    for row in maze:
+        print(" ".join(map(str, row)))
 while(True):
     for event in pg.event.get():
         if event.type==pg.QUIT:
@@ -286,8 +255,12 @@ while(True):
     if check_button_dfs:
         #print(startx , randomstartx, starty, randomstarty)
         #(randomstartx,randomstarty)
-        randomstartx = random.randint(0,24)
-        randomstarty = random.randint(0,24)
+        randomstartx = random.randint(1,24)
+        randomstarty = random.randint(1,24)
+        while randomstartx%2==0:
+            randomstartx = random.randint(1,24)
+        while randomstarty%2==0:
+            randomstarty = random.randint(1,24)
         SaveStartx = randomstartx
         SaveStarty = randomstarty
         maze = [[1 for _ in range(w)] for _ in range(h)]  # 1: Tường, 0: Đường
@@ -298,23 +271,23 @@ while(True):
         SaveEndy = tuple[1]
         # print(SaveEndx, SaveEndy)
         # print(MAZE)
+        draw_maze(startx,starty)
         check_button_dfs = False
         
     if check_button_Hunt_and_Kill:
-        randomstartx = random.randint(0,24)
-        randomstarty = random.randint(0,24)
+        n=int(500/cell_size)
+        randomstartx = random.randint(0,n-1)
+        randomstarty = random.randint(0,n-1)
+        while randomstartx%2==0:
+            randomstartx = random.randint(1,n-1)
+        while randomstarty%2==0:
+            randomstarty = random.randint(1,n-1)
         SaveStartx = randomstartx
         SaveStarty = randomstarty
-        maze = [[1 for _ in range(w)] for _ in range(h)]  # 1: Tường, 0: Đường
-        generate_maze_hunt_and_kill(randomstartx,randomstarty,maze)
-        tuple = drawStartEnd()
-        MAZE = maze
-        SaveEndx = tuple[0]
-        SaveEndy = tuple[1]
+        maze = [[0 for _ in range(n)] for _ in range(n)]
+        createMaze(maze,n)
+        huntAndKill(maze,SaveStartx,SaveStarty)
+        draw_maze(startx,starty)
         check_button_Hunt_and_Kill = False
-
         
-
-    
     pg.display.update()
-    
