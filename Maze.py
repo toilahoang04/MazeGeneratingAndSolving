@@ -26,8 +26,8 @@ displaySurf.fill(gray)
 startPic=pg.image.load("./img/actor.png")
 endPic=pg.image.load("./img/vietnam.png")
 #scale ảnh
-startPic=pg.transform.scale(startPic,(40,40))
-endPic=pg.transform.scale(endPic,(40,40))
+startPic=pg.transform.scale(startPic,(20,20))
+endPic=pg.transform.scale(endPic,(20,20))
 
 #load music
 pg.mixer.music.load('./DLTTAD.mp3')  # Thay thế 'background_music.mp3' bằng tên tệp của bạn
@@ -90,8 +90,11 @@ def drawAiScreen():
     #right bar
     drawText(border+buttonbarW+mazeSize,border/2+50*0,75,50,'Start point',24,red)
     drawText(border+buttonbarW+mazeSize,border/2+50*1,75,50,'End point',24,red)
-    displaySurf.blit(startPic,(border+buttonbarW+mazeSize+75+10,border/2+50*0))
-    displaySurf.blit(endPic,(border+buttonbarW+mazeSize+75+10,border/2+50*1))
+    displaySurf.blit(startPic,(border+buttonbarW+mazeSize+75+10,border/2+15))
+    displaySurf.blit(endPic,(border+buttonbarW+mazeSize+75+10,border/2+15*4))
+
+    drawButton(border+buttonbarW+mazeSize,border/2+50*2,140,50,'User can play',24,black,white,red)
+    drawButton(border+buttonbarW+mazeSize,border/2+50*3+25,140,50,'Back to now',24,black,white,red)
 
 def check_stable_button(x, y, width, height):
     mouse = pg.mouse.get_pos()
@@ -103,8 +106,10 @@ def check_stable_button(x, y, width, height):
 
 
 # check button dfs
+check_button_DFS_maze = False
+check_button_Hunt_and_Kill_maze = False
 check_button_dfs = False
-check_button_Hunt_and_Kill = False
+check_button_bfs = False
 
 # Directions for moving in the maze (Right, Left, Down, Up)
 # Khởi tạo các hướng di chuyển
@@ -147,18 +152,20 @@ def generate_maze(x, y,maze):
         if is_within_bounds(nx, ny):
             maze[x + dx][y + dy] = 0  # Xóa tường giữa các ô
             maze[nx][ny] = 0          # Xóa ô đích để tạo đường đi
-            draw_maze(startx,starty)               # Cập nhật màn hình mỗi khi có thay đổi
+            draw_maze(startx,starty,maze)               # Cập nhật màn hình mỗi khi có thay đổi
             pg.display.flip()     # Vẽ lại màn hình
             pg.time.delay(20)     # Thời gian trễ để xem rõ quá trình tạo mê cung
             generate_maze(nx, ny,maze)     # Đệ quy tiếp tục từ ô đích
 # Drawing the maze
-def draw_maze(startx, starty):
+def draw_maze(startx, starty,maze):
     for x in range(w):
         for y in range(h):
             if maze[x][y] == 1 :
                 color = dark_green
-            # elif maze[x][y] == 2:
-            #     color = pale_yellow
+            elif maze[x][y] == 4:
+                color = red
+            elif maze[x][y] == 3:
+                color = aqua
             else: color = white
             pg.draw.rect(displaySurf, color, (startx + x * cell_size, starty+ y * cell_size, cell_size, cell_size))
 def drawStartEnd():
@@ -209,7 +216,7 @@ def huntAndKill(maze, start_x, start_y):
             maze[next_x][next_y] = 2  # Đánh dấu ô mới là đã ghé thăm
             current_x, current_y = next_x, next_y
             #vẽ
-            draw_maze(startx,starty)
+            draw_maze(startx,starty,maze)
             pg.display.flip()
             pg.time.delay(20)
         else:
@@ -239,20 +246,228 @@ def huntAndKill(maze, start_x, start_y):
                 break
 
     # In mê cung kết quả
-    for row in maze:
-        print(" ".join(map(str, row)))
+    # for row in maze:
+    #     print(" ".join(map(str, row)))
+
+draggingStart = False
+draggingEnd = False
+
+
+# startPicSmall = pg.transform.scale(startPic,(40,40))
+# endPicSmall = pg.transform.scale(endPic,(40,40))
+imgStart = startPic.get_rect()
+imgEnd = endPic.get_rect()
+
+
+
+
+checkCreateStartEndDFS = False
+checkCreateStartEndHuntAndKill=False
+beforexStart = 0
+beforeyStart = 0
+beforexEnd = 0
+beforeyEnd = 0
 while(True):
     for event in pg.event.get():
         if event.type==pg.QUIT:
                 pg.quit()
                 sys.exit()
         if check_stable_button(border,border/2*2+50*1,buttonbarW-border,50):
-            check_button_dfs = True
+            imgStart.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15)
+            imgEnd.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15*4)
+            check_button_DFS_maze = True
         if check_stable_button(border,border/2*3+50*2,buttonbarW-border,50):
-            check_button_Hunt_and_Kill = True
+            imgStart.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15)
+            imgEnd.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15*4)
+            check_button_Hunt_and_Kill_maze = True
+        if check_stable_button(border,border/2*6+50*5,buttonbarW-border,50):
+
+            check_button_dfs = True
+        if check_stable_button(border,border/2*5+50*4,buttonbarW-border,50):
+            check_button_bfs = True
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if imgStart.collidepoint(event.pos):
+                    draggingStart = True  # Bắt đầu kéo
+                    mouse_x, mouse_y = event.pos
+                    offset_x = imgStart.x - mouse_x
+                    offset_y = imgStart.y - mouse_y
+                if imgEnd.collidepoint(event.pos):
+                    draggingEnd = True
+                    mouse_x, mouse_y = event.pos
+                    offset_x = imgEnd.x - mouse_x
+                    offset_y = imgEnd.y - mouse_y
+                # print("++++++++++++++++")
+                # print(imgStart.x,imgStart.y)
+                # print(imgEnd.x,imgEnd.y)
+                beforexStart = imgStart.x
+                beforeyStart = imgStart.y
+                beforexEnd = imgEnd.x
+                beforeyEnd = imgEnd.y
+
+        # Kiểm tra nếu thả chuột trái
+        if event.type == pg.MOUSEBUTTONUP:
+            if event.button == 1:  # Chuột trái
+                draggingStart = False  # Ngừng kéo
+                draggingEnd = False
+                if checkCreateStartEndDFS or checkCreateStartEndHuntAndKill:
+
+
+
+                    kStart = int((imgStart.x - startx)//cell_size)
+                    lStart = int((imgStart.y - starty)//cell_size)
+                    mStart = int((beforexStart - startx)//cell_size)
+                    nStart = int((beforeyStart - starty)//cell_size)
+                    if kStart >=0 and kStart < 25 and lStart >= 0  and lStart < 25:
+                        if MAZE[kStart][lStart] == 0:
+                            MAZE[kStart][lStart] = 4
+                            if mStart >= 0 and mStart <25 and nStart >= 0 and nStart < 25:
+                                MAZE[mStart][nStart] = 0
+                        if MAZE[kStart][lStart] == 1:
+                            if mStart >= 0 and mStart <25 and nStart >= 0 and nStart < 25:
+                                MAZE[mStart][nStart] = 4
+                    else:
+                        if mStart >= 0 and mStart <25 and nStart >= 0 and nStart < 25:
+                                MAZE[mStart][nStart] = 4
+
+
+
+
+
+                    kEnd = int((imgEnd.x - startx)//cell_size)
+                    lEnd = int((imgEnd.y - starty)//cell_size)
+                    mEnd = int((beforexEnd - startx)//cell_size)
+                    nEnd = int((beforeyEnd - starty)//cell_size)
+
+                    if kEnd >= 0 and kEnd < 25 and lEnd >= 0 and lEnd < 25:
+                        if MAZE[kEnd][lEnd] == 0:
+                                MAZE[kEnd][lEnd] = 3
+                                if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
+                                    MAZE[mEnd][nEnd] = 0
+                        if MAZE[kEnd][lEnd] == 1:
+                                if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
+                                    MAZE[mEnd][nEnd] = 3
+                    else:
+                        if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
+                                MAZE[mEnd][nEnd] = 3
+                    
+
+                    draw_maze(startx, starty,MAZE)
+                    
+                      
+
+                       
+                    # kStart = int((imgStart.x - startx)//cell_size)
+                    # lStart = int((imgStart.y - starty)//cell_size)
+                    # mStart = int((beforexStart - startx)//cell_size)
+                    # nStart = int((beforeyStart - starty)//cell_size)
+                    
+
+                    
+
+
+                       
+
+                    print("llll",kStart,lStart)
+                        
+                        #print(MAZE[int((imgStart.x - startx)//cell_size)][int((imgStart.y - starty)//cell_size)])
+                    if kStart >=0 and kStart < 25 and lStart >= 0  and lStart < 25:
+
+                        print("--------------------------------")
+                        print(imgStart.x,imgStart.y)
+                        print(startx,starty)
+                        print(int((imgStart.x - startx)//cell_size),int((imgStart.y - starty)//cell_size))
+                        print(MAZE[kStart][lStart])
+                        print("--------------------------------")
+
+                        if MAZE[kStart][lStart] == 4:
+                            # MAZE[kStart][lStart] = 4
+                            print("iiii")
+                            displaySurf.blit(startPic,(startx + kStart*cell_size,starty + lStart*cell_size))
+                            imgStart.x = (startx + kStart*cell_size)
+                            imgStart.y = (starty + lStart*cell_size)
+                        if MAZE[kStart][lStart] == 1:
+                            displaySurf.blit(startPic,(startx + mStart*cell_size,starty + nStart*cell_size))
+                            imgStart.x = beforexStart
+                            imgStart.y = beforeyStart
+                            #draw_maze(startx, starty,MAZE)
+                            #print("kkkkkk")
+                    else: 
+                        displaySurf.blit(startPic,(startx + mStart*cell_size,starty + nStart*cell_size))
+                        imgStart.x = beforexStart
+                        imgStart.y = beforeyStart
+                        
+
+
+
+
+
+                   
+                    print("kkkk",kEnd,lEnd)
+
+
+                    if kEnd >= 0 and kEnd < 25 and lEnd >= 0 and lEnd < 25:
+
+                        print("++++++++++++++++++++++++++++++++++++++++++++++++")
+                        print(imgEnd.x,imgEnd.y)
+                        print(startx,starty)
+                        print(int((imgEnd.x - startx)//cell_size),int((imgEnd.y - starty)//cell_size))
+                        print(MAZE[kEnd][lEnd])
+                        print("++++++++++++++++++++++++++++++++++++++++++++++++")
+
+                        
+                        if MAZE[kEnd][lEnd] == 3:
+                            # MAZE[kEnd][lEnd] = 3
+                            # if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
+                            #     MAZE[mEnd][nEnd] = 0
+                            displaySurf.blit(endPic,(startx + kEnd*cell_size,starty + lEnd*cell_size))
+                            imgEnd.x = (startx + kEnd*cell_size)
+                            imgEnd.y = (starty + lEnd*cell_size)
+                        if MAZE[kEnd][lEnd] == 1:
+                            # if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
+                            #     MAZE[mEnd][nEnd] = 3
+                            displaySurf.blit(endPic,(startx + mEnd*cell_size,starty + nEnd*cell_size))
+                            imgEnd.x = beforexEnd
+                            imgEnd.y = beforeyEnd
+                    else:
+                        # if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
+                        #         MAZE[mEnd][nEnd] = 3
+                        displaySurf.blit(endPic,(startx + mEnd*cell_size,starty + nEnd*cell_size))
+                        imgEnd.x = beforexEnd
+                        imgEnd.y = beforeyEnd
+
+
+                        # if MAZE[kEnd][lEnd] == 0:
+                        #     displaySurf.blit(endPic,(startx + kEnd*cell_size,starty + lEnd*cell_size))
+                        #     imgEnd.x = (startx + kEnd*cell_size)
+                        #     imgEnd.y = (starty + lEnd*cell_size)
+                        # else:
+                        #     displaySurf.blit(endPic,(startx + mEnd*cell_size,starty + nEnd*cell_size))
+                        #     imgEnd.x = beforexEnd
+                        #     imgEnd.y = beforeyEnd
+                            #draw_maze(startx, starty,MAZE)
+                    # else:
+                    #     displaySurf.blit(endPic,(startx + mEnd*cell_size,starty + nEnd*cell_size))
+                    #     imgEnd.x = beforexEnd
+                    #     imgEnd.y = beforeyEnd
+                    
+
+                
+        # Di chuyển biểu tượng khi kéo
+        if event.type == pg.MOUSEMOTION:
+            if draggingStart:
+                mouse_x, mouse_y = event.pos
+                imgStart.x = mouse_x + offset_x
+                imgStart.y = mouse_y + offset_y
+            if draggingEnd:
+                mouse_x, mouse_y = event.pos
+                imgEnd.x = mouse_x + offset_x
+                imgEnd.y = mouse_y + offset_y
+           
+
     
     drawAiScreen()
-    if check_button_dfs:
+    if check_button_DFS_maze:
         #print(startx , randomstartx, starty, randomstarty)
         #(randomstartx,randomstarty)
         randomstartx = random.randint(1,24)
@@ -265,16 +480,12 @@ while(True):
         SaveStarty = randomstarty
         maze = [[1 for _ in range(w)] for _ in range(h)]  # 1: Tường, 0: Đường
         generate_maze(randomstartx,randomstarty,maze)
-        tuple = drawStartEnd()
         MAZE = maze
-        SaveEndx = tuple[0]
-        SaveEndy = tuple[1]
-        # print(SaveEndx, SaveEndy)
-        # print(MAZE)
-        draw_maze(startx,starty)
-        check_button_dfs = False
+        draw_maze(startx,starty,MAZE)
+        checkCreateStartEndDFS = True
+        check_button_DFS_maze = False
         
-    if check_button_Hunt_and_Kill:
+    if check_button_Hunt_and_Kill_maze:
         n=int(500/cell_size)
         randomstartx = random.randint(0,n-1)
         randomstarty = random.randint(0,n-1)
@@ -287,7 +498,17 @@ while(True):
         maze = [[0 for _ in range(n)] for _ in range(n)]
         createMaze(maze,n)
         huntAndKill(maze,SaveStartx,SaveStarty)
-        draw_maze(startx,starty)
-        check_button_Hunt_and_Kill = False
-        
+        #print(MAZE)
+        draw_maze(startx,starty,maze)
+        for i in range(w):
+            for j in range(h):
+                if maze[i][j] == 2:
+                    maze[i][j] = 0
+        MAZE = maze
+        checkCreateStartEndHuntAndKill = True
+        check_button_Hunt_and_Kill_maze = False
+    if check_button_dfs:
+        print(1)
+    if check_button_bfs:
+        print(2)
     pg.display.update()
