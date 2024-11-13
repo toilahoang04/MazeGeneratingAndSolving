@@ -1,6 +1,9 @@
 import pygame as pg
 import sys
 import random
+import copy
+import dfs as dfsAlgorithm
+import bfs as bfsAlgorithm
 
 pg.init()
 # size
@@ -260,13 +263,108 @@ imgEnd = endPic.get_rect()
 
 
 
-
+# creatr start point and end point
 checkCreateStartEndDFS = False
 checkCreateStartEndHuntAndKill=False
 beforexStart = 0
 beforeyStart = 0
 beforexEnd = 0
 beforeyEnd = 0
+
+
+
+
+
+
+# Find position of start and end
+
+def findStartEnd(maze):
+    Start = ()
+    End = ()
+    for x in range(w):
+        for y in range(h):
+            if maze[x][y] == 4:
+                Start = (x, y)
+            if maze[x][y] == 3:
+                End = (x, y)
+    return Start, End
+# def solve maze
+checkCreateMap = False
+checkCreateStartPoint = False
+checkCreateEndPoint = False 
+def finddfs(maze,start,end):
+    pathFind,AllMaze = dfsAlgorithm.find_path(maze,start,end)
+    #(AllMaze)
+    for mazes in AllMaze:
+        print("222")
+        draw_maze(startx,starty,mazes)
+        displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+        pg.display.flip()
+        pg.time.delay(100)
+        print("111")
+    #maze = copy.deepcopy(mazeTemporary)
+    pg.display.update()
+    pg.time.delay(2000)
+    print(start[0],start[1])
+    for x in range(w):
+        for y in range(h):
+            if maze[x][y] == 4:
+                maze[x][y] = 0
+                #print(x,y)
+                #All.append((x,y))
+        #print(stepAll)
+    for step in pathFind:
+        maze[step[0]][step[1]] = 4
+    for step in pathFind:
+        maze[end[0]][end[1]] = 3
+        maze[step[0]][step[1]] = 4
+        draw_maze(startx,starty,maze)
+        displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
+        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+        maze[step[0]][step[1]] = 0
+        pg.display.update()
+        pg.time.delay(500)
+
+def findbfs(maze,start,end):
+    AllMaze =[]
+    pathFind,allMaze = bfsAlgorithm.bfs(AllMaze,maze,start,end)
+
+    for mazes in allMaze:
+        print("222")
+        draw_maze(startx,starty,mazes)
+        displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+        pg.display.flip()
+        pg.time.delay(100)
+        print("111")
+    
+    # print(pathFind)
+    # pg.display.flip()
+    # draw_maze(startx,starty,maze)
+    # displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+    # displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+    pg.display.update()
+    pg.time.delay(2000)
+    print(start[0],start[1])
+    for x in range(w):
+        for y in range(h):
+            if maze[x][y] == 4:
+                maze[x][y] = 0
+    for step in pathFind:
+        maze[step[0]][step[1]] = 4
+    for step in pathFind:
+        maze[end[0]][end[1]] = 3
+        maze[step[0]][step[1]] = 4
+        draw_maze(startx,starty,maze)
+        displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
+        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+        maze[step[0]][step[1]] = 0
+        pg.display.update()
+        pg.time.delay(500)
+        
+    
+
 while(True):
     for event in pg.event.get():
         if event.type==pg.QUIT:
@@ -352,6 +450,7 @@ while(True):
                                 MAZE[mEnd][nEnd] = 3
                     
 
+                    print("dmmmmm")
                     draw_maze(startx, starty,MAZE)
                     
                       
@@ -368,21 +467,22 @@ while(True):
 
                        
 
-                    print("llll",kStart,lStart)
+                    #print("llll",kStart,lStart)
                         
                         #print(MAZE[int((imgStart.x - startx)//cell_size)][int((imgStart.y - starty)//cell_size)])
                     if kStart >=0 and kStart < 25 and lStart >= 0  and lStart < 25:
 
-                        print("--------------------------------")
-                        print(imgStart.x,imgStart.y)
-                        print(startx,starty)
-                        print(int((imgStart.x - startx)//cell_size),int((imgStart.y - starty)//cell_size))
-                        print(MAZE[kStart][lStart])
-                        print("--------------------------------")
+                        # print("--------------------------------")
+                        # print(imgStart.x,imgStart.y)
+                        # print(startx,starty)
+                        # print(int((imgStart.x - startx)//cell_size),int((imgStart.y - starty)//cell_size))
+                        # print(MAZE[kStart][lStart])
+                        # print("--------------------------------")
 
                         if MAZE[kStart][lStart] == 4:
                             # MAZE[kStart][lStart] = 4
-                            print("iiii")
+                            #print("iiii")
+                            checkCreateStartPoint = True
                             displaySurf.blit(startPic,(startx + kStart*cell_size,starty + lStart*cell_size))
                             imgStart.x = (startx + kStart*cell_size)
                             imgStart.y = (starty + lStart*cell_size)
@@ -403,17 +503,17 @@ while(True):
 
 
                    
-                    print("kkkk",kEnd,lEnd)
+                    #print("kkkk",kEnd,lEnd)
 
 
                     if kEnd >= 0 and kEnd < 25 and lEnd >= 0 and lEnd < 25:
 
-                        print("++++++++++++++++++++++++++++++++++++++++++++++++")
-                        print(imgEnd.x,imgEnd.y)
-                        print(startx,starty)
-                        print(int((imgEnd.x - startx)//cell_size),int((imgEnd.y - starty)//cell_size))
-                        print(MAZE[kEnd][lEnd])
-                        print("++++++++++++++++++++++++++++++++++++++++++++++++")
+                        # print("++++++++++++++++++++++++++++++++++++++++++++++++")
+                        # print(imgEnd.x,imgEnd.y)
+                        # print(startx,starty)
+                        # print(int((imgEnd.x - startx)//cell_size),int((imgEnd.y - starty)//cell_size))
+                        # print(MAZE[kEnd][lEnd])
+                        # print("++++++++++++++++++++++++++++++++++++++++++++++++")
 
                         
                         if MAZE[kEnd][lEnd] == 3:
@@ -423,6 +523,7 @@ while(True):
                             displaySurf.blit(endPic,(startx + kEnd*cell_size,starty + lEnd*cell_size))
                             imgEnd.x = (startx + kEnd*cell_size)
                             imgEnd.y = (starty + lEnd*cell_size)
+                            checkCreateEndPoint = True
                         if MAZE[kEnd][lEnd] == 1:
                             # if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
                             #     MAZE[mEnd][nEnd] = 3
@@ -483,6 +584,7 @@ while(True):
         MAZE = maze
         draw_maze(startx,starty,MAZE)
         checkCreateStartEndDFS = True
+        checkCreateMap = True
         check_button_DFS_maze = False
         
     if check_button_Hunt_and_Kill_maze:
@@ -506,9 +608,23 @@ while(True):
                     maze[i][j] = 0
         MAZE = maze
         checkCreateStartEndHuntAndKill = True
+        checkCreateMap = True
         check_button_Hunt_and_Kill_maze = False
-    if check_button_dfs:
+    if check_button_dfs and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
+
+        
+        Start,End = findStartEnd(MAZE)
+        Maze =copy.deepcopy(MAZE)
+        finddfs(Maze,Start,End)
+        print(Start,End)
         print(1)
-    if check_button_bfs:
+        check_button_dfs =  False
+
+    if check_button_bfs and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
+        Start,End = findStartEnd(MAZE)
+        Maze =copy.deepcopy(MAZE)
+        findbfs(Maze,Start,End)
+        print(Start,End)
         print(2)
+        check_button_bfs = False
     pg.display.update()
