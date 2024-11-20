@@ -113,7 +113,7 @@ check_button_DFS_maze = False
 check_button_Hunt_and_Kill_maze = False
 check_button_dfs = False
 check_button_bfs = False
-
+check_user_play = False
 # Directions for moving in the maze (Right, Left, Down, Up)
 # Khởi tạo các hướng di chuyển
 DIRECTIONS = [
@@ -363,8 +363,71 @@ def findbfs(maze,start,end):
         pg.display.update()
         pg.time.delay(500)
         
+def move(array,xStart,yStart,xEnd,yEnd,stable):
+    if stable == 1 and xStart - 1 >= 0 and (array[xStart - 1][yStart] == 0 or array[xStart - 1][yStart] == 3) :
+            
+        array[xStart - 1][yStart] = 4 
+        array[xStart][yStart] = 0
+        if xStart-1 != xEnd or yStart != yEnd:
+            array[xEnd][yEnd] = 3
+        draw_maze(startx,starty,array)
+        displaySurf.blit(startPic,(startx + (xStart-1)*cell_size,starty + yStart*cell_size))
+        displaySurf.blit(endPic,(startx + xEnd*cell_size,starty + yEnd*cell_size))
+        
+
+    
+    elif stable == 2 and xStart + 1 < w and (array[xStart + 1][yStart] == 0  or array[xStart + 1][yStart] == 3):
+        array[xStart + 1][yStart] = 4 
+        array[xStart][yStart] = 0 
+        if xStart+1 != xEnd or yStart != yEnd:
+            array[xEnd][yEnd] = 3
+        draw_maze(startx,starty,array)    
+        displaySurf.blit(startPic,(startx + (xStart+1)*cell_size,starty + yStart*cell_size))
+        displaySurf.blit(endPic,(startx + xEnd*cell_size,starty + yEnd*cell_size))
+      
+
+
+    elif stable == 3 and yStart - 1 >= 0 and (array[xStart][yStart - 1] == 0 or array[xStart][yStart - 1] == 3):
+        array[xStart][yStart - 1] = 4
+        array[xStart][yStart] = 0 
+        if xStart != xEnd or yStart-1 != yEnd:
+            array[xEnd][yEnd] = 3
+        draw_maze(startx,starty,array)
+        displaySurf.blit(startPic,(startx + xStart*cell_size,starty + (yStart-1)*cell_size))
+        displaySurf.blit(endPic,(startx + xEnd*cell_size,starty + yEnd*cell_size))
+        
+
+
+    elif stable == 4 and yStart + 1 < h and (array[xStart][yStart + 1] == 0 or array[xStart][yStart + 1] == 3):
+        print("oooooooooooooooo")
+        array[xStart][yStart + 1] = 4 
+        array[xStart][yStart] = 0
+        if xStart != xEnd or yStart+1 != yEnd:
+            array[xEnd][yEnd] = 3
+        draw_maze(startx,starty,array)
+        displaySurf.blit(startPic,(startx + xStart*cell_size,starty + (yStart+1)*cell_size))
+        displaySurf.blit(endPic,(startx + xEnd*cell_size,starty + yEnd*cell_size))
+        
+            
+       
+
+    
     
 
+
+
+    # for i in range(w): 
+    #     for j in range(h):
+    #         if array[i][j] == 4:
+    #             if i + x < 0 or i + x >= n or j + y < 0 or j + y >= n:
+    #                 array[i][j] = 0
+    #             elif array[i + x][j + y] == 0:
+    #                 array[i][j] = 0
+    #                 array[i + x][j + y] = 4
+    #             else:
+    #                 array[i][j] = 0
+    #                 array[i + x][j + y] = 4
+    #                 stable = False
 while(True):
     for event in pg.event.get():
         if event.type==pg.QUIT:
@@ -374,15 +437,20 @@ while(True):
             imgStart.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15)
             imgEnd.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15*4)
             check_button_DFS_maze = True
+            check_user_play = False
         if check_stable_button(border,border/2*3+50*2,buttonbarW-border,50):
             imgStart.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15)
             imgEnd.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15*4)
             check_button_Hunt_and_Kill_maze = True
+            check_user_play = False
         if check_stable_button(border,border/2*6+50*5,buttonbarW-border,50):
 
             check_button_dfs = True
         if check_stable_button(border,border/2*5+50*4,buttonbarW-border,50):
             check_button_bfs = True
+        if check_stable_button(border+buttonbarW+mazeSize,border/2+50*2,140,50):
+            print("Choi")
+            check_user_play = True
         if event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if imgStart.collidepoint(event.pos):
@@ -482,20 +550,23 @@ while(True):
                         if MAZE[kStart][lStart] == 4:
                             # MAZE[kStart][lStart] = 4
                             #print("iiii")
+                            #print(kStart,lStart)
+                            print("iiii")
                             checkCreateStartPoint = True
                             displaySurf.blit(startPic,(startx + kStart*cell_size,starty + lStart*cell_size))
                             imgStart.x = (startx + kStart*cell_size)
                             imgStart.y = (starty + lStart*cell_size)
-                        if MAZE[kStart][lStart] == 1:
+                        if MAZE[kStart][lStart] == 1 or MAZE[kStart][lStart] == 3:
                             displaySurf.blit(startPic,(startx + mStart*cell_size,starty + nStart*cell_size))
                             imgStart.x = beforexStart
                             imgStart.y = beforeyStart
                             #draw_maze(startx, starty,MAZE)
-                            #print("kkkkkk")
+                            print("kkkkkk")
                     else: 
                         displaySurf.blit(startPic,(startx + mStart*cell_size,starty + nStart*cell_size))
                         imgStart.x = beforexStart
                         imgStart.y = beforeyStart
+                        print("lll")
                         
 
 
@@ -524,7 +595,7 @@ while(True):
                             imgEnd.x = (startx + kEnd*cell_size)
                             imgEnd.y = (starty + lEnd*cell_size)
                             checkCreateEndPoint = True
-                        if MAZE[kEnd][lEnd] == 1:
+                        if MAZE[kEnd][lEnd] == 1 or MAZE[kEnd][lEnd] == 4:
                             # if mEnd >= 0 and mEnd <25 and nEnd >= 0 and nEnd < 25:
                             #     MAZE[mEnd][nEnd] = 3
                             displaySurf.blit(endPic,(startx + mEnd*cell_size,starty + nEnd*cell_size))
@@ -564,6 +635,78 @@ while(True):
                 mouse_x, mouse_y = event.pos
                 imgEnd.x = mouse_x + offset_x
                 imgEnd.y = mouse_y + offset_y
+        keys = pg.key.get_pressed()
+        if keys[pg.K_LEFT] and check_user_play == True and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
+            Start,End = findStartEnd(MAZE)
+            fix= int((imgEnd.x - startx)//cell_size)
+            fiy = int((imgEnd.y - starty)//cell_size)
+            print("================================================")
+            print(1,"leng",len(End),End,Start,fix,fiy)
+            print("================================================")
+            if Start[0] > 0 and Start[1] < w:
+                print(Start,End)
+                imgStart.x = (startx + (Start[0]-1)*cell_size)
+                imgStart.y = (starty + Start[1]*cell_size)
+                # print(int((imgStart.x - startx)//cell_size))
+                # print(int((imgStart.y - starty)//cell_size))
+                move(MAZE,Start[0],Start[1],fix,fiy,1)
+            #handle(Begin,100,100,90,3,1)
+            
+            #print("mũi tên trái được nhấn")
+        if keys[pg.K_RIGHT] and check_user_play == True and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
+            Start,End = findStartEnd(MAZE)
+            fix= int((imgEnd.x - startx)//cell_size)
+            fiy = int((imgEnd.y - starty)//cell_size)
+            print("================================================")
+            print(2,"leng",len(End),End,Start,fix,fiy)
+            print("================================================")
+            if Start[0] > 0 and Start[1] < w:
+                imgStart.x = (startx + (Start[0]+1)*cell_size)
+                imgStart.y = (starty + Start[1]*cell_size)
+                # print(Start,End)
+                # print(int((imgStart.x - startx)//cell_size))
+                # print(int((imgStart.y - starty)//cell_size))
+                move(MAZE,Start[0],Start[1],fix,fiy,2)
+            #print(2)
+            #handle(Begin,100,100,90,3,2)
+        if keys[pg.K_UP] and check_user_play == True and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
+            Start,End = findStartEnd(MAZE)
+            fix= int((imgEnd.x - startx)//cell_size)
+            fiy = int((imgEnd.y - starty)//cell_size)
+            print("================================================")
+            print(3,"leng",len(End),End,Start,fix,fiy)
+            print("================================================")
+            if Start[0] > 0 and Start[1] < w:
+                imgStart.x = (startx + Start[0]*cell_size)
+                imgStart.y = (starty + (Start[1]-1)*cell_size)
+                # print(Start,End)
+                # print(int((imgStart.x - startx)//cell_size))
+                # print(int((imgStart.y - starty)//cell_size))
+                move(MAZE,Start[0],Start[1],fix,fiy,3)
+            #print(3)
+            #handle(Begin,100,100,90,3,3)
+            
+            #print(Begin)
+        if keys[pg.K_DOWN] and check_user_play == True and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
+            Start,End = findStartEnd(MAZE)
+            fix= int((imgEnd.x - startx)//cell_size)
+            fiy = int((imgEnd.y - starty)//cell_size)
+            print("================================================")
+            print(4,"leng",len(End),End,Start,fix,fiy)
+            print("================================================")
+            if Start[0] > 0 and Start[1] < w :
+                imgStart.x = (startx + Start[0]*cell_size)
+                imgStart.y = (starty + (Start[1]+1)*cell_size)
+                
+                # print(Start,End)
+                # print(int((imgStart.x - startx)//cell_size))
+                # print(int((imgStart.y - starty)//cell_size))
+                
+                move(MAZE,Start[0],Start[1],fix,fiy,4)
+            
+            #print(4)
+            #print("xin chao")
+            #handle(Begin,100,100,90,3,4)
            
 
     
