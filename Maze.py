@@ -496,7 +496,7 @@ def Moving(Maze, Start, End, path):
         for step in path:
             Maze[step[0]][step[1]]=5
             print(f"{step[0]}; {step[1]}")
-            drawCell(step[0],step[1],blue)
+            drawCell(step[0],step[1],aqua)
         drawPic(startPic,Start[0],Start[1])
         drawPic(endPic,End[0],End[1])
         pg.display.update()
@@ -610,83 +610,148 @@ def findAstar(maze, start, goal):
     return None  # Không tìm thấy đường đi
 
 #local search
-def findlocalsearch(maze,start,goal):
-    current = start
+# def findlocalsearch(maze,start,goal):
+#     current = start
+#     visited = set()
+#     visited.add(current)
+#     came_from = {}
+#     came_from[current] = None
+
+#     # Khởi tạo các hướng di chuyển
+#     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # lên, xuống, trái, phải
+
+#     while True:
+#         x, y = current
+
+#         # Kiểm tra nếu là đích
+#         if maze[x][y] == 3:
+#             # Truy vết lại từ đích về điểm bắt đầu
+#             path = []
+#             while current is not None:
+#                 path.append(current)
+#                 current = came_from[current]
+#             path.reverse()  # Đảo ngược để có thứ tự từ bắt đầu đến đích
+#             return path  # Trả về đường đi đã tìm được
+#         elif start != current:
+#             maze[x][y] = 5
+#             drawCell(x, y, red)
+#             pg.time.delay(100)
+#             pg.display.update()
+
+#         # Tìm ô lân cận tốt nhất (gần đích nhất)
+#         best_neighbor = None
+#         best_distance = float('inf')
+#         for dx, dy in directions:
+#             nx, ny = x + dx, y + dy
+#             # Kiểm tra tính hợp lệ của ô lân cận
+#             if (0 <= nx < len(maze) and 0 <= ny < len(maze[0]) and
+#                 maze[nx][ny] != 1 and (nx, ny) not in visited):
+#                 distance = manhattan_distance(nx, ny, goal[0], goal[1])
+#                 if distance < best_distance:
+#                     best_distance = distance
+#                     best_neighbor = (nx, ny)
+
+#         # Nếu tìm thấy ô lân cận tốt hơn, di chuyển tới đó
+#         if best_neighbor is not None:
+#             visited.add(best_neighbor)
+#             came_from[best_neighbor] = current
+#             current = best_neighbor
+#         else:
+#             # Không tìm thấy ô lân cận tốt hơn (local optimum)
+#             return None  # Không tìm thấy đường đi
+#     # pathFind,allMaze = ls.local_search(AllMaze,maze,start,end)
+#     # for mazes in allMaze:
+#     #         #print("222")
+#     #         draw_maze(startx,starty,mazes)
+#     #         displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+#     #         displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+#     #         pg.display.flip()
+#     #         pg.time.delay(100)
+#     #         #print("111")
+    
+#     # pg.display.update()
+#     # pg.time.delay(2000)
+#     # for x in range(w):
+#     #     for y in range(h):
+#     #         if maze[x][y] == 4:
+#     #             maze[x][y] = 0
+#     # for step in pathFind:
+#     #     maze[step[0]][step[1]] = 4
+#     # for step in pathFind:
+#     #     maze[end[0]][end[1]] = 3
+#     #     maze[step[0]][step[1]] = 4
+#     #     draw_maze(startx,starty,maze)
+#     #     displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
+#     #     displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+#     #     maze[step[0]][step[1]] = 0
+#     #     pg.display.update()
+#     #     pg.time.delay(500)
+def is_valid_move(maze, x, y):
+    rows, cols = len(maze), len(maze[0])
+    return 0 <= x < rows and 0 <= y < cols and (maze[x][y] == 0 or maze[x][y] == 4 or maze[x][y] == 3)
+def findlocalsearch(maze,start,end):
+    stack = [start]  # Ngăn xếp lưu các vị trí đã đi qua
+    path = [start]  # Lưu đường đi đã chọn
     visited = set()
-    visited.add(current)
-    came_from = {}
-    came_from[current] = None
-
-    # Khởi tạo các hướng di chuyển
-    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # lên, xuống, trái, phải
-
-    while True:
-        x, y = current
-
-        # Kiểm tra nếu là đích
-        if maze[x][y] == 3:
-            # Truy vết lại từ đích về điểm bắt đầu
-            path = []
-            while current is not None:
-                path.append(current)
-                current = came_from[current]
-            path.reverse()  # Đảo ngược để có thứ tự từ bắt đầu đến đích
-            return path  # Trả về đường đi đã tìm được
-        elif start != current:
+    visited.add(start)
+    
+    while stack:
+        # print(stack[-1])
+        current_position = stack[-1]  # Lấy vị trí hiện tại từ đỉnh ngăn xếp
+        # if current_position is None:
+        #     print("Lỗi: current_position không hợp lệ!")
+        #     return None
+        x, y = current_position
+        neighbors = [
+            (x + 1, y), (x - 1, y), 
+            (x, y + 1), (x, y - 1)
+        ]
+        
+        # Lọc các neighbor hợp lệ
+        valid_neighbors = [
+            (nx, ny) for nx, ny in neighbors 
+            if is_valid_move(maze, nx, ny) and (nx, ny) not in visited
+        ]
+        
+        # In tất cả các neighbor hợp lệ
+        #print(f"Current position: {current_position}")
+        #print(f"Valid neighbors: {valid_neighbors}")
+        
+        if not valid_neighbors:
+            stack.pop()  
+            path.pop()
+            continue
+        
+        # Tìm neighbor gần nhất tới đích
+        next_position = min(
+            valid_neighbors, 
+            key=lambda pos: manhattan_distance(pos[0], pos[1], end[0], end[1])
+        )
+        stack.append(next_position)
+        visited.add(next_position)
+        path.append(next_position)
+        if next_position[0] == end[0] and next_position[1] == end[1] :
+            return path
+        else:
             maze[x][y] = 5
             drawCell(x, y, red)
+            displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+            displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
             pg.time.delay(100)
             pg.display.update()
+        
+        #print(f"Next position chosen: {next_position}\n")
 
-        # Tìm ô lân cận tốt nhất (gần đích nhất)
-        best_neighbor = None
-        best_distance = float('inf')
-        for dx, dy in directions:
-            nx, ny = x + dx, y + dy
-            # Kiểm tra tính hợp lệ của ô lân cận
-            if (0 <= nx < len(maze) and 0 <= ny < len(maze[0]) and
-                maze[nx][ny] != 1 and (nx, ny) not in visited):
-                distance = manhattan_distance(nx, ny, goal[0], goal[1])
-                if distance < best_distance:
-                    best_distance = distance
-                    best_neighbor = (nx, ny)
+        #maze[next_position[0]][next_position[1]] = 4
+        #AllMaze.append(copy.deepcopy(maze)) 
+        
+       
+        #print(next_position)
+        #print(next_position,end)
 
-        # Nếu tìm thấy ô lân cận tốt hơn, di chuyển tới đó
-        if best_neighbor is not None:
-            visited.add(best_neighbor)
-            came_from[best_neighbor] = current
-            current = best_neighbor
-        else:
-            # Không tìm thấy ô lân cận tốt hơn (local optimum)
-            return None  # Không tìm thấy đường đi
-    # pathFind,allMaze = ls.local_search(AllMaze,maze,start,end)
-    # for mazes in allMaze:
-    #         #print("222")
-    #         draw_maze(startx,starty,mazes)
-    #         displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
-    #         displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-    #         pg.display.flip()
-    #         pg.time.delay(100)
-    #         #print("111")
+        
     
-    # pg.display.update()
-    # pg.time.delay(2000)
-    # for x in range(w):
-    #     for y in range(h):
-    #         if maze[x][y] == 4:
-    #             maze[x][y] = 0
-    # for step in pathFind:
-    #     maze[step[0]][step[1]] = 4
-    # for step in pathFind:
-    #     maze[end[0]][end[1]] = 3
-    #     maze[step[0]][step[1]] = 4
-    #     draw_maze(startx,starty,maze)
-    #     displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
-    #     displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-    #     maze[step[0]][step[1]] = 0
-    #     pg.display.update()
-    #     pg.time.delay(500)
-
+    return None
 def move(array,xStart,yStart,xEnd,yEnd,stable):
     if stable == 1 and xStart - 1 >= 0 and (array[xStart - 1][yStart] == 0 or array[xStart - 1][yStart] == 3) :
             
@@ -781,11 +846,12 @@ while(True):
                 else:
                     inhand=2
             if check_stable_button(border+buttonbarW+mazeSize+10,border/2+50*5+40*3,120,30):
-                for i in range(1,24):
-                    for j in range(1,24):
-                        if MAZE[i][j]==1: 
-                            MAZE[i][j]=0
-                draw_maze(startx,starty,MAZE)
+                if checkCreateMap:
+                    for i in range(1,24):
+                        for j in range(1,24):
+                            if MAZE[i][j]==1: 
+                                MAZE[i][j]=0
+                    draw_maze(startx,starty,MAZE)
             if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if imgStart.collidepoint(event.pos):
@@ -944,6 +1010,15 @@ while(True):
                     imgEnd.y = mouse_y + offset_y
             if checkCreateMap and EditMaze(border/2+buttonbarW+20*1,border/2+20*1,20*23,20*23,MAZE):
                 draw_maze(startx, starty,MAZE)
+                kStart = int((imgStart.x - startx)//cell_size)
+                lStart = int((imgStart.y - starty)//cell_size)
+                kEnd = int((imgEnd.x - startx)//cell_size)
+                lEnd = int((imgEnd.y - starty)//cell_size)
+                displaySurf.blit(endPic,(startx + kEnd*cell_size,starty + lEnd*cell_size))
+                displaySurf.blit(startPic,(startx + kStart*cell_size,starty + lStart*cell_size))
+                # if kEnd > 1 and kEnd < 24 and lEnd > 1 and lEnd < 24 and kStart > 1 and kStart < 24 and lStart > 1 and lStart < 24:
+                #     displaySurf.blit(endPic,(startx + kEnd*cell_size,starty + lEnd*cell_size))
+                #     displaySurf.blit(startPic,(startx + kStart*cell_size,starty + lStart*cell_size))
         #di chuyển khi chơi
         keys = pg.key.get_pressed()
         if keys[pg.K_LEFT] and check_user_play == True and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
