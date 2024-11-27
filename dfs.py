@@ -36,7 +36,8 @@ def dfs(AllMaze,maze, start,end, visited, path):
         nx, ny = start[0] + dx, start[1] + dy
         if is_valid(maze, nx, ny, visited):
             if dfs(AllMaze,maze, (nx,ny),end, visited, path):
-                return True
+                return path,AllMaze
+                #return True
 
     # Nếu không tìm thấy đường đi, quay lại (backtrack)
     path.pop()
@@ -50,7 +51,7 @@ def find_path(maze, start,end):
     if dfs(AllMaze,maze, start, end, visited, path):
         return path,AllMaze
     else:
-        return None
+        return False
 
 # Tìm đường đi từ điểm bắt đầu
 # path = find_path(maze,start,end)

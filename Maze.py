@@ -5,6 +5,7 @@ import copy
 import dfs as dfsAlgorithm
 import bfs as bfsAlgorithm
 import heapq
+import localsearch as ls
 #import GreedyAndAstar as GA
 
 pg.init()
@@ -94,6 +95,7 @@ def drawAiScreen():
     drawButton(border,border/2*6+50*5,buttonbarW-border,50,'DFS',24,black,white,red)
     drawButton(border,border/2*7+50*6,buttonbarW-border,50,'Greedy',24,black,white,red)
     drawButton(border,border/2*8+50*7,buttonbarW-border,50,'A*',24,black,white,red)
+    drawButton(border,border/2*9+50*8,buttonbarW-border,50,'Local Search',24,black,white,red)
     #right bar
     drawText(border+buttonbarW+mazeSize,border/2+50*0,75,50,'Start point',24,red)
     drawText(border+buttonbarW+mazeSize,border/2+50*1,75,50,'End point',24,red)
@@ -119,6 +121,7 @@ check_button_dfs = False
 check_button_bfs = False
 check_button_Greedy = False
 check_button_Astar = False
+check_button_localsearch = False
 check_user_play = False
 
 # Directions for moving in the maze (Right, Left, Down, Up)
@@ -301,75 +304,146 @@ checkCreateMap = False
 checkCreateStartPoint = False
 checkCreateEndPoint = False 
 def finddfs(maze,start,end):
-    pathFind,AllMaze = dfsAlgorithm.find_path(maze,start,end)
-    #(AllMaze)
-    for mazes in AllMaze:
-        print("222")
-        draw_maze(startx,starty,mazes)
-        displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
-        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-        pg.display.flip()
-        pg.time.delay(100)
-        print("111")
-    #maze = copy.deepcopy(mazeTemporary)
-    pg.display.update()
-    pg.time.delay(2000)
-    print(start[0],start[1])
-    for x in range(w):
-        for y in range(h):
-            if maze[x][y] == 4:
-                maze[x][y] = 0
-                #print(x,y)
-                #All.append((x,y))
-        #print(stepAll)
-    for step in pathFind:
-        maze[step[0]][step[1]] = 4
-    for step in pathFind:
-        maze[end[0]][end[1]] = 3
-        maze[step[0]][step[1]] = 4
-        draw_maze(startx,starty,maze)
-        displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
-        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-        maze[step[0]][step[1]] = 0
+    visited = set()
+    path = []
+    AllMaze = []
+    if dfsAlgorithm.dfs(AllMaze,maze,start,end,visited,path)!= False:
+        #pathFind,AllMaze = dfsAlgorithm.find_path(maze,start,end)
+        #(AllMaze)
+        for mazes in AllMaze:
+            print("222")
+            draw_maze(startx,starty,mazes)
+            displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+            displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+            pg.display.flip()
+            pg.time.delay(100)
+            print("111")
+        #maze = copy.deepcopy(mazeTemporary)
         pg.display.update()
-        pg.time.delay(500)
+        pg.time.delay(100)
+        print(start[0],start[1])
+        for x in range(w):
+            for y in range(h):
+                if maze[x][y] == 4:
+                    maze[x][y] = 0
+                    #print(x,y)
+                    #All.append((x,y))
+            #print(stepAll)
+        for step in path:
+            maze[step[0]][step[1]] = 4
+        for step in path:
+            maze[end[0]][end[1]] = 3
+            maze[step[0]][step[1]] = 4
+            draw_maze(startx,starty,maze)
+            displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
+            displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+            maze[step[0]][step[1]] = 0
+            pg.display.update()
+            pg.time.delay(500)
+    else: print("Can not find")
 def findbfs(maze,start,end):
     AllMaze =[]
-    pathFind,allMaze = bfsAlgorithm.bfs(AllMaze,maze,start,end)
+    if bfsAlgorithm.bfs(AllMaze,maze,start,end) !=False:
+        pathFind,allMaze = bfsAlgorithm.bfs(AllMaze,maze,start,end)
 
-    for mazes in allMaze:
-        print("222")
-        draw_maze(startx,starty,mazes)
-        displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
-        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-        pg.display.flip()
-        pg.time.delay(100)
-        print("111")
+        for mazes in allMaze:
+            print("222")
+            draw_maze(startx,starty,mazes)
+            displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+            displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+            pg.display.flip()
+            pg.time.delay(100)
+            print("111")
     
     # print(pathFind)
     # pg.display.flip()
     # draw_maze(startx,starty,maze)
     # displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
     # displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-    pg.display.update()
-    pg.time.delay(2000)
-    print(start[0],start[1])
-    for x in range(w):
-        for y in range(h):
-            if maze[x][y] == 4:
-                maze[x][y] = 0
-    for step in pathFind:
-        maze[step[0]][step[1]] = 4
-    for step in pathFind:
-        maze[end[0]][end[1]] = 3
-        maze[step[0]][step[1]] = 4
-        draw_maze(startx,starty,maze)
-        displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
-        displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-        maze[step[0]][step[1]] = 0
         pg.display.update()
-        pg.time.delay(500)
-        
+        pg.time.delay(100)
+        print(start[0],start[1])
+        for x in range(w):
+            for y in range(h):
+                if maze[x][y] == 4:
+                    maze[x][y] = 0
+        for step in pathFind:
+            maze[step[0]][step[1]] = 4
+        for step in pathFind:
+            maze[end[0]][end[1]] = 3
+            maze[step[0]][step[1]] = 4
+            draw_maze(startx,starty,maze)
+            displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
+            displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+            maze[step[0]][step[1]] = 0
+            pg.display.update()
+            pg.time.delay(500)
+    else: 
+        print("Could not find")
+
+def findlocalsearch(maze,start,end):
+    AllMaze =[]
+    if ls.local_search(AllMaze,maze,start,end)!=False:
+        pathFind,allMaze = ls.local_search(AllMaze,maze,start,end)
+        for mazes in allMaze:
+            #print("222")
+            draw_maze(startx,starty,mazes)
+            displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+            displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+            pg.display.flip()
+            pg.time.delay(100)
+            #print("111")
+    
+        pg.display.update()
+        pg.time.delay(100)
+        print(start[0],start[1])
+        for x in range(w):
+            for y in range(h):
+                if maze[x][y] == 4:
+                    maze[x][y] = 0
+        for step in pathFind:
+            maze[step[0]][step[1]] = 4
+        for step in pathFind:
+            maze[end[0]][end[1]] = 3
+            maze[step[0]][step[1]] = 4
+            draw_maze(startx,starty,maze)
+            displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
+            displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+            maze[step[0]][step[1]] = 0
+            pg.display.update()
+            pg.time.delay(500)
+
+    else: 
+        print("Could not find")
+    # pathFind,allMaze = ls.local_search(AllMaze,maze,start,end)
+    # for mazes in allMaze:
+    #         #print("222")
+    #         draw_maze(startx,starty,mazes)
+    #         displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
+    #         displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+    #         pg.display.flip()
+    #         pg.time.delay(100)
+    #         #print("111")
+    
+    # pg.display.update()
+    # pg.time.delay(2000)
+    # for x in range(w):
+    #     for y in range(h):
+    #         if maze[x][y] == 4:
+    #             maze[x][y] = 0
+    # for step in pathFind:
+    #     maze[step[0]][step[1]] = 4
+    # for step in pathFind:
+    #     maze[end[0]][end[1]] = 3
+    #     maze[step[0]][step[1]] = 4
+    #     draw_maze(startx,starty,maze)
+    #     displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
+    #     displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
+    #     maze[step[0]][step[1]] = 0
+    #     pg.display.update()
+    #     pg.time.delay(500)
+    
+   
 # ==============================thuật toán tìm đường có hướng====================
 # hàm chung
 def manhattan_distance(x1, y1, x2, y2):
@@ -572,6 +646,8 @@ while(True):
             check_button_Greedy = True
         if check_stable_button(border,border/2*8+50*7,buttonbarW-border,50):
             check_button_Astar = True
+        if check_stable_button(border,border/2*8+50*8,buttonbarW-border,50):
+            check_button_localsearch = True
         if check_stable_button(border+buttonbarW+mazeSize,border/2+50*2,140,50):
             print("Choi")
             check_user_play = True
@@ -875,4 +951,11 @@ while(True):
         path = findAstar(Maze,Start,End)
         Moving(Maze,Start,End,path)
         check_button_Astar =  False
+    if check_button_localsearch and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
+        #print("222")
+        Start,End = findStartEnd(MAZE)
+        print(Start,End)
+        Maze =copy.deepcopy(MAZE)
+        findlocalsearch(Maze,Start,End)
+        check_button_localsearch = False
     pg.display.update()

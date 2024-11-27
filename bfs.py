@@ -41,7 +41,7 @@ def bfs(AllMaze,maze, start,end):
                 visited.add((nx, ny))
                 queue.append(((nx, ny), path + [(nx, ny)]))
 
-    return None  # Trả về None nếu không tìm thấy đường đi
+    return False  # Trả về None nếu không tìm thấy đường đi
 
 # Tìm đường đi từ điểm bắt đầu
 #path = bfs(maze, start,end)
