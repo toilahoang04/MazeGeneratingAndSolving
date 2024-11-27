@@ -1,2 +1,2 @@
 # MazeGeneratingAndSolving
-Đồ án môn AI
+file dfs, bfs không cần thiết trong folder này có thể xóa khi tải về
