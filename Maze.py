@@ -270,7 +270,7 @@ def drawTable(surface, data, start_x, start_y,scroll_y,cell_width, cell_height):
             text_rect = text_surface.get_rect(center=(x + cell_width // 2, y + cell_height // 2))
             surface.blit(text_surface, text_rect)
      
-saveRowsData([count,"A*", "(0, 0)", "(5, 5)", 15, 10])
+
 
 
 def check_stable_button(x, y, width, height):
@@ -1198,11 +1198,21 @@ while(True):
             Start,End = findStartEnd(MAZE)
             Maze =copy.deepcopy(MAZE)
             path = finddfs(Maze,Start,End)
+            startx,starty = Start
+            endx,endy = End
+            Total = 0
+            for i in range(w):
+                for j in range(h):
+                    if Maze[i][j] == 5:
+                        Total += 1
+
+            
             if path is None:
                 drawLose()
                 check_button_dfs =  False
             else:
                 Moving(Maze,Start,End,path)
+                saveRowsData([count,"DFS", f"({startx}, {starty})", f"({endx}, {endy})", Total, len(path)])
                 check_button_dfs =  False
                 drawWin()
 
@@ -1210,11 +1220,19 @@ while(True):
             Start,End = findStartEnd(MAZE)
             Maze =copy.deepcopy(MAZE)
             path = findbfs(Maze,Start,End)
+            startx,starty = Start
+            endx,endy = End
+            Total = 0
+            for i in range(w):
+                for j in range(h):
+                    if Maze[i][j] == 5:
+                        Total += 1
             if path is None:
                 drawLose()
                 check_button_bfs = False
             else:
                 Moving(Maze,Start,End,path)
+                saveRowsData([count,"BFS", f"({startx}, {starty})", f"({endx}, {endy})", Total, len(path)])
                 check_button_bfs = False
                 drawWin()
 
@@ -1223,11 +1241,19 @@ while(True):
             Start,End = findStartEnd(MAZE)
             Maze =copy.deepcopy(MAZE)
             path = findGreedy(Maze,Start,End)
+            startx,starty = Start
+            endx,endy = End
+            Total = 0
+            for i in range(w):
+                for j in range(h):
+                    if Maze[i][j] == 5:
+                        Total += 1
             if path is None:
                 drawLose()
                 check_button_Greedy =  False
             else:
                 Moving(Maze,Start,End,path)
+                saveRowsData([count,"Greedy", f"({startx}, {starty})", f"({endx}, {endy})", Total, len(path)])
                 check_button_Greedy =  False
                 drawWin()
 
@@ -1235,11 +1261,19 @@ while(True):
             Start,End = findStartEnd(MAZE)
             Maze =copy.deepcopy(MAZE)
             path = findAstar(Maze,Start,End)
+            startx,starty = Start
+            endx,endy = End
+            Total = 0
+            for i in range(w):
+                for j in range(h):
+                    if Maze[i][j] == 5:
+                        Total += 1
             if path is None:
                 drawLose()
                 check_button_Astar =  False
             else:
                 Moving(Maze,Start,End,path)
+                saveRowsData([count,"A*", f"({startx}, {starty})", f"({endx}, {endy})", Total, len(path)])
                 check_button_Astar =  False
                 drawWin()
         #local search
@@ -1248,11 +1282,19 @@ while(True):
             Start,End = findStartEnd(MAZE)
             Maze =copy.deepcopy(MAZE)
             path = findlocalsearch(Maze,Start,End)
+            startx,starty = Start
+            endx,endy = End
+            Total = 0
+            for i in range(w):
+                for j in range(h):
+                    if Maze[i][j] == 5:
+                        Total += 1
             if path is None:
                 drawLose()
                 check_button_localsearch = False
             else:
                 Moving(Maze,Start,End,path)
+                saveRowsData([count,"Local Search", f"({startx}, {starty})", f"({endx}, {endy})", Total, len(path)])
                 check_button_localsearch = False
                 drawWin()
         pg.display.update()
@@ -1309,5 +1351,6 @@ while(True):
             if check_stable_button(screenW/2-350,50,200,50):
                 HomeScreen=True
                 HistoryScreen=False
-        drawTable(displaySurf, dataTable, 40, 100,scroll_y, cell_width=140, cell_height=50)
+        if(dataTable != 0):
+            drawTable(displaySurf, dataTable, 40, 100,scroll_y, cell_width=140, cell_height=50)
         pg.display.update()
