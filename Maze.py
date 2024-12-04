@@ -4,6 +4,10 @@ import random
 import copy
 import heapq
 from collections import deque
+import pandas as pd
+import pygame as pg
+import sys
+from openpyxl import Workbook, load_workbook
 
 pg.init()
 # size
@@ -32,10 +36,14 @@ startPic=pg.image.load("./img/actor.png")
 endPic=pg.image.load("./img/vietnam.png")
 bg=pg.image.load("./img/bg.png")
 aboutUs=pg.image.load("./img/AboutUs.png")
+left=pg.image.load("./img/left.png")
+right=pg.image.load("./img/right.png")
 #scale ảnh
 startPic=pg.transform.scale(startPic,(20,20))
 endPic=pg.transform.scale(endPic,(20,20))
 bg=pg.transform.scale(bg,(screenW,screenH))
+left=pg.transform.scale(left,(20,20))
+right=pg.transform.scale(right,(20,20))
 
 #load music
 pg.mixer.music.load('./DLTTAD.mp3')  # Thay thế 'background_music.mp3' bằng tên tệp của bạn
@@ -79,14 +87,58 @@ HomeScreen=True
 AiScreen=False
 WinScreen=False
 AboutUsScreen=False
+HistoryScreen = False
+# Tên file Excel
+file_name = "History Algorithm.xlsx"
+# Biến scroll
+scroll_y = 0  # Vị trí cuộn theo trục Y
+SCROLL_SPEED = 20  # Tốc độ cuộn
 #check map
 haveMap=False
 #check block đang cầm
 inhand=0 #0 rỗng; 1 Tường; 2 Đường
 #hàm vẽ screen
+start=True
+# numOfMap số lượng map đang có, indexMap map hiện tại
+with open('map/NOM.txt', 'r', encoding='utf-8') as file:
+    content = file.read().strip()  # loại bỏ khoảng trắng và ký tự xuống dòng
+    numOfMap = int(content)
+    print(numOfMap)
+def ReadNOM():
+    with open('map/NOM.txt', 'r', encoding='utf-8') as file:
+        content = file.read().strip()
+        n = int(content)
+        return n
+def UpdateNOM():
+    global numOfMap
+    with open('map/NOM.txt', 'w', encoding='utf-8') as file:
+        file.write(str(numOfMap) + '\n')
+numOfMap=ReadNOM()
+if numOfMap>1:
+    indexMap=1
+else: 
+    indexMap=0
+
+def WriteMaze(matrix):
+    global numOfMap
+    numOfMap=numOfMap+1
+    UpdateNOM()
+    with open(f"map/maze{numOfMap}.txt", 'w', encoding='utf-8') as file:
+        for row in matrix:
+            line = ' '.join(str(element) for element in row)
+            file.write(line + '\n')
+def ReadMaze():
+    global indexMap
+    matrix = []
+    with open(f"map/maze{indexMap}.txt", 'r', encoding='utf-8') as file:
+        for line in file:
+            row = [float(num) for num in line.strip().split()]
+            matrix.append(row)
+    return matrix
 def drawAiScreen():
     global haveMap
     global inhand
+    global indexMap
     if not haveMap:
         displaySurf.blit(bg,(0,0))
         haveMap=True
@@ -114,8 +166,15 @@ def drawAiScreen():
     displaySurf.blit(startPic,(border+buttonbarW+mazeSize+75+10,border/2+15))
     displaySurf.blit(endPic,(border+buttonbarW+mazeSize+75+10,border/2+15*4))
 
-    drawButton(border+buttonbarW+mazeSize,border/2+50*2,140,50,'User can play',24,black,white,red)
-    drawButton(border+buttonbarW+mazeSize,border/2+50*3+25,140,50,'Back to home',24,black,white,red)
+    drawButton(border+buttonbarW+mazeSize,border/2+50*2,140,40,'User can play',24,black,white,red)
+    drawButton(border+buttonbarW+mazeSize,border/2+50*3,140,40,'Back to home',24,black,white,red)
+    #chọn, lưu map===
+    displaySurf.blit(left,(border+buttonbarW+mazeSize,border/2+50*4))
+    displaySurf.blit(right,(border+buttonbarW+mazeSize+50,border/2+50*4))
+    drawButton(border+buttonbarW+mazeSize+20,border/2+50*4,30,20,f"{indexMap}",16,black,white,white)
+    drawButton(border+buttonbarW+mazeSize+70,border/2+50*4,70,20,'Choice',16,black,white,red)
+    drawButton(border+buttonbarW+mazeSize+70,border/2+50*4+25,70,20,'Save',16,black,white,red)
+    #================
     pg.draw.rect(displaySurf,white,(border+buttonbarW+mazeSize,border/2+50*5,140,210))
     drawText(border+buttonbarW+mazeSize+10,border/2+50*5+10,120,30,"Edit Maze",28,black)
     drawButton(border+buttonbarW+mazeSize+10,border/2+50*5+40*1,120,30,'Get wall',16,white,black,red)
@@ -132,7 +191,8 @@ def drawHomeScreen():
     displaySurf.blit(bg,(0,0))
     drawText(screenW/2-150,50,300,300,"MAZE GAME",100,red)
     drawButton(screenW/2-100,250,200,50,"Play",16,white,black,red)
-    drawButton(screenW/2-100,350,200,50,"Creator Info",16,white,black,red)
+    drawButton(screenW/2-100,325,200,50,"Creator Info",16,white,black,red)
+    drawButton(screenW/2-100,400,200,50,"Saved data",16,white,black,red)
 def drawAboutUsScreen():
     displaySurf.blit(bg,(0,0))
     displaySurf.blit(aboutUs,(60,10))
@@ -141,12 +201,77 @@ def drawWinScreen():
     displaySurf.blit(bg,(0,0))
     drawText(screenW/2-150,50,300,300,"You Win",100,red)
     drawButton(screenW/2-100,250,200,50,"Come back",16,white,black,red)
+def drawHistoryScreen():
+    displaySurf.blit(bg,(0,0))
+    drawButton(screenW/2-350,50,200,50,"back to Home",16,white,black,red)
 def Win():
     global AiScreen
     global WinScreen
     print("Win")
     AiScreen=False
     WinScreen=True
+
+# Kiểm tra nếu file chưa tồn tại, tạo mới
+try:
+    wb = load_workbook(file_name)
+    ws = wb.active
+except FileNotFoundError:
+    wb = Workbook()
+    ws = wb.active
+    # Thêm tiêu đề cột
+    # Định nghĩa các tên cột
+    columns = [
+    "STT",
+    "Algorithm",
+    "Start position",
+    "End position",
+    "Total steps",
+    "Result steps" 
+    ]
+    ws.append(columns)
+dataTable = 0
+tableWidth = 0
+tableHeight = 0
+wb.save(file_name) 
+df = pd.read_excel(file_name)
+lenTable = [df.columns.tolist()] + df.values.tolist()  # Chuyển thành danh sách 2D
+count = len(lenTable) - 1
+def saveRowsData(data):
+    global dataTable,tableWidth ,tableHeight
+    ws.append(data)
+    wb.save(file_name)  # Lưu thay đổi sau mỗi lần ghi
+    df = pd.read_excel(file_name)
+    dataTable = [df.columns.tolist()] + df.values.tolist()  # Chuyển thành danh sách 2D
+    #print(dataTable,"88888888")
+    
+    tableWidth = len(dataTable[0]) * 200
+    tableHeight = len(dataTable) * 50
+
+def drawTable(surface, data, start_x, start_y,scroll_y,cell_width, cell_height):
+   # Font chữ
+    font = pg.font.Font(None, 30)
+    #print(data)
+    drawText(450,50-scroll_y,50,50,"History Algorithm",50,white)
+    for row_idx, row in enumerate(data):
+        y = start_y + row_idx * cell_height - scroll_y
+        if y + cell_height < 0 or y > screenH:  # Bỏ qua nếu ngoài màn hình
+            continue
+        for col_idx, cell in enumerate(row):
+            x = start_x + col_idx * cell_width
+            # Vẽ ô
+            pg.draw.rect(surface, white, (x, y, cell_width, cell_height), 1)
+            # Vẽ nội dung
+            if col_idx == 4: 
+                text_surface = font.render(str(cell), True, red)
+            elif col_idx == 5:
+                text_surface = font.render(str(cell), True, aqua)
+            else:
+                text_surface = font.render(str(cell), True, white)
+            text_rect = text_surface.get_rect(center=(x + cell_width // 2, y + cell_height // 2))
+            surface.blit(text_surface, text_rect)
+     
+saveRowsData([count,"A*", "(0, 0)", "(5, 5)", 15, 10])
+
 
 def check_stable_button(x, y, width, height):
     mouse = pg.mouse.get_pos()
@@ -200,16 +325,20 @@ w,h = mazeSize // cell_size, mazeSize // cell_size
 
 SaveEndx,SaveEndy =0,0
 SaveStartx,SaveStarty =0,0
-MAZE = []
-
+MAZE = [[0 for _ in range(25)] for _ in range(25)]
+for i in range(25):
+    for j in range(25):
+        if i==0 or i==24 or j==0 or j==24:
+            MAZE[i][j]=1
+        else:
+            MAZE[i][j]=0
+startx = (border/2+buttonbarW) 
+starty = (border/2) 
 #print(maze)
 #=====================================Function chung========================================
 # Hàm kiểm tra xem vị trí mới có nằm trong phạm vi của mê cung và là tường không
 def is_within_bounds(x, y):
     return 0 < x < h-1 and 0 < y < w-1 and maze[x][y] == 1
-
-startx = (border/2+buttonbarW) 
-starty = (border/2) 
 #==========================================DFS==============================================
 # Randomized Depth-First Search algorithm to generate maze
 def generate_maze(x, y,maze):
@@ -241,6 +370,7 @@ def draw_maze(startx, starty,maze):
                 color = aqua
             else: color = white
             pg.draw.rect(displaySurf, color, (startx + x * cell_size, starty+ y * cell_size, cell_size, cell_size))
+draw_maze(startx,starty,MAZE)
 def drawStartEnd():
     list =[]
     for x in range(w):
@@ -366,7 +496,7 @@ def findStartEnd(maze):
                 End = (x, y)
     return Start, End
 # def solve maze
-checkCreateMap = False
+checkCreateMap = True
 checkCreateStartPoint = False
 checkCreateEndPoint = False 
 def finddfs(maze, start, goal):
@@ -608,84 +738,6 @@ def findAstar(maze, start, goal):
                     came_from[next_cell] = current
 
     return None  # Không tìm thấy đường đi
-
-#local search
-# def findlocalsearch(maze,start,goal):
-#     current = start
-#     visited = set()
-#     visited.add(current)
-#     came_from = {}
-#     came_from[current] = None
-
-#     # Khởi tạo các hướng di chuyển
-#     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # lên, xuống, trái, phải
-
-#     while True:
-#         x, y = current
-
-#         # Kiểm tra nếu là đích
-#         if maze[x][y] == 3:
-#             # Truy vết lại từ đích về điểm bắt đầu
-#             path = []
-#             while current is not None:
-#                 path.append(current)
-#                 current = came_from[current]
-#             path.reverse()  # Đảo ngược để có thứ tự từ bắt đầu đến đích
-#             return path  # Trả về đường đi đã tìm được
-#         elif start != current:
-#             maze[x][y] = 5
-#             drawCell(x, y, red)
-#             pg.time.delay(100)
-#             pg.display.update()
-
-#         # Tìm ô lân cận tốt nhất (gần đích nhất)
-#         best_neighbor = None
-#         best_distance = float('inf')
-#         for dx, dy in directions:
-#             nx, ny = x + dx, y + dy
-#             # Kiểm tra tính hợp lệ của ô lân cận
-#             if (0 <= nx < len(maze) and 0 <= ny < len(maze[0]) and
-#                 maze[nx][ny] != 1 and (nx, ny) not in visited):
-#                 distance = manhattan_distance(nx, ny, goal[0], goal[1])
-#                 if distance < best_distance:
-#                     best_distance = distance
-#                     best_neighbor = (nx, ny)
-
-#         # Nếu tìm thấy ô lân cận tốt hơn, di chuyển tới đó
-#         if best_neighbor is not None:
-#             visited.add(best_neighbor)
-#             came_from[best_neighbor] = current
-#             current = best_neighbor
-#         else:
-#             # Không tìm thấy ô lân cận tốt hơn (local optimum)
-#             return None  # Không tìm thấy đường đi
-#     # pathFind,allMaze = ls.local_search(AllMaze,maze,start,end)
-#     # for mazes in allMaze:
-#     #         #print("222")
-#     #         draw_maze(startx,starty,mazes)
-#     #         displaySurf.blit(startPic,(startx + start[0]*cell_size,starty + start[1]*cell_size))
-#     #         displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-#     #         pg.display.flip()
-#     #         pg.time.delay(100)
-#     #         #print("111")
-    
-#     # pg.display.update()
-#     # pg.time.delay(2000)
-#     # for x in range(w):
-#     #     for y in range(h):
-#     #         if maze[x][y] == 4:
-#     #             maze[x][y] = 0
-#     # for step in pathFind:
-#     #     maze[step[0]][step[1]] = 4
-#     # for step in pathFind:
-#     #     maze[end[0]][end[1]] = 3
-#     #     maze[step[0]][step[1]] = 4
-#     #     draw_maze(startx,starty,maze)
-#     #     displaySurf.blit(startPic,(startx + step[0]*cell_size,starty + step[1]*cell_size))
-#     #     displaySurf.blit(endPic,(startx + end[0]*cell_size,starty + end[1]*cell_size))
-#     #     maze[step[0]][step[1]] = 0
-#     #     pg.display.update()
-#     #     pg.time.delay(500)
 def is_valid_move(maze, x, y):
     rows, cols = len(maze), len(maze[0])
     return 0 <= x < rows and 0 <= y < cols and (maze[x][y] == 0 or maze[x][y] == 4 or maze[x][y] == 3)
@@ -740,18 +792,9 @@ def findlocalsearch(maze,start,end):
             pg.time.delay(100)
             pg.display.update()
         
-        #print(f"Next position chosen: {next_position}\n")
-
-        #maze[next_position[0]][next_position[1]] = 4
-        #AllMaze.append(copy.deepcopy(maze)) 
-        
-       
-        #print(next_position)
-        #print(next_position,end)
-
-        
-    
+        #print(f"Next position chosen: {next_position}\n")    
     return None
+
 def move(array,xStart,yStart,xEnd,yEnd,stable):
     if stable == 1 and xStart - 1 >= 0 and (array[xStart - 1][yStart] == 0 or array[xStart - 1][yStart] == 3) :
             
@@ -827,12 +870,12 @@ while(True):
                 check_button_Astar = True
             if check_stable_button(border,border/2*8+50*8,buttonbarW-border,50):
                 check_button_localsearch = True
-            if check_stable_button(border+buttonbarW+mazeSize,border/2+50*3+25,140,50):
+            if check_stable_button(border+buttonbarW+mazeSize,border/2+50*3,140,40):
                 AiScreen=False
                 haveMap=False
                 HomeScreen=True
                 break
-            if check_stable_button(border+buttonbarW+mazeSize,border/2+50*2,140,50):
+            if check_stable_button(border+buttonbarW+mazeSize,border/2+50*2,140,40):
                 print("Choi")
                 check_user_play = not check_user_play
             if check_stable_button(border+buttonbarW+mazeSize+10,border/2+50*5+40*1,120,30):
@@ -846,12 +889,31 @@ while(True):
                 else:
                     inhand=2
             if check_stable_button(border+buttonbarW+mazeSize+10,border/2+50*5+40*3,120,30):
+                for i in range(1,24):
+                    for j in range(1,24):
+                        if MAZE[i][j]==1: 
+                            MAZE[i][j]=0
+                draw_maze(startx,starty,MAZE)
                 if checkCreateMap:
                     for i in range(1,24):
                         for j in range(1,24):
                             if MAZE[i][j]==1: 
                                 MAZE[i][j]=0
                     draw_maze(startx,starty,MAZE)
+            if check_stable_button(border+buttonbarW+mazeSize,border/2+50*4,20,20) and indexMap>0:
+                if(indexMap>0):
+                    indexMap=indexMap-1
+            if check_stable_button(border+buttonbarW+mazeSize+50,border/2+50*4,20,20):
+                if(indexMap<numOfMap):
+                    indexMap=indexMap+1
+            if check_stable_button(border+buttonbarW+mazeSize+70,border/2+50*4,70,20):
+                if indexMap!=0:
+                    MAZE=ReadMaze()
+            if check_stable_button(border+buttonbarW+mazeSize+70,border/2+50*4+25,70,20):
+                indexMap=numOfMap+1
+                WriteMaze(MAZE)
+                imgStart.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15)
+                imgEnd.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15*4)
             if event.type == pg.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     if imgStart.collidepoint(event.pos):
@@ -1016,9 +1078,6 @@ while(True):
                 lEnd = int((imgEnd.y - starty)//cell_size)
                 displaySurf.blit(endPic,(startx + kEnd*cell_size,starty + lEnd*cell_size))
                 displaySurf.blit(startPic,(startx + kStart*cell_size,starty + lStart*cell_size))
-                # if kEnd > 1 and kEnd < 24 and lEnd > 1 and lEnd < 24 and kStart > 1 and kStart < 24 and lStart > 1 and lStart < 24:
-                #     displaySurf.blit(endPic,(startx + kEnd*cell_size,starty + lEnd*cell_size))
-                #     displaySurf.blit(startPic,(startx + kStart*cell_size,starty + lStart*cell_size))
         #di chuyển khi chơi
         keys = pg.key.get_pressed()
         if keys[pg.K_LEFT] and check_user_play == True and checkCreateMap and checkCreateEndPoint and checkCreateStartPoint:
@@ -1090,6 +1149,9 @@ while(True):
                 move(MAZE,Start[0],Start[1],fix,fiy,4)
         
         drawAiScreen()
+        if start:
+            draw_maze(startx,starty,MAZE) 
+            start=False
         if check_button_DFS_maze:
             #print(startx , randomstartx, starty, randomstarty)
             #(randomstartx,randomstarty)
@@ -1205,9 +1267,12 @@ while(True):
                 HomeScreen=False
                 AiScreen=True
                 haveMap=False
-            if check_stable_button(screenW/2-100,350,200,50):
+            if check_stable_button(screenW/2-100,325,200,50):
                 HomeScreen=False
                 AboutUsScreen=True
+            if check_stable_button(screenW/2-100,400,200,50):
+                HomeScreen=False
+                HistoryScreen=True
         pg.display.update()
 
     while(AboutUsScreen):
@@ -1229,4 +1294,20 @@ while(True):
             if check_stable_button(screenW/2-100,250,200,50):
                 WinScreen=False
                 AiScreen=True
+        pg.display.update()
+    while(HistoryScreen):
+        drawHistoryScreen()
+        for event in pg.event.get():
+            if event.type==pg.QUIT:
+                    pg.quit()
+                    sys.exit()
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                if event.button == 4:  # Lăn chuột lên
+                    scroll_y = max(scroll_y - SCROLL_SPEED, 0)
+                elif event.button == 5:  # Lăn chuột xuống
+                    scroll_y = min(scroll_y + SCROLL_SPEED, tableHeight - screenH + 100)
+            if check_stable_button(screenW/2-350,50,200,50):
+                HomeScreen=True
+                HistoryScreen=False
+        drawTable(displaySurf, dataTable, 40, 100,scroll_y, cell_width=140, cell_height=50)
         pg.display.update()
