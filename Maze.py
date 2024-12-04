@@ -910,7 +910,10 @@ while(True):
                     indexMap=indexMap+1
             if check_stable_button(border+buttonbarW+mazeSize+70,border/2+50*4,70,20):
                 if indexMap!=0:
+                    imgStart.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15)
+                    imgEnd.topleft =(border+buttonbarW+mazeSize+75+10,border/2+15*4)
                     MAZE=ReadMaze()
+
             if check_stable_button(border+buttonbarW+mazeSize+70,border/2+50*4+25,70,20):
                 indexMap=numOfMap+1
                 WriteMaze(MAZE)
@@ -1349,5 +1352,6 @@ while(True):
             if check_stable_button(screenW/2-350,50,200,50):
                 HomeScreen=True
                 HistoryScreen=False
-        drawTable(displaySurf, dataTable, 40, 100,scroll_y, cell_width=140, cell_height=50)
+        if dataTable!=0:
+            drawTable(displaySurf, dataTable, 40, 100,scroll_y, cell_width=140, cell_height=50)
         pg.display.update()
